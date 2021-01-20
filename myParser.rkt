@@ -17,6 +17,11 @@
              ("else" (token-ELSKW))
              ("end" (token-ENDKW))
              ("return" (token-RETKW))
+             ("switch" (token-SWCHKW))
+             ("case" (token-CASEKW))
+             ("break" (token-BRKKW))
+             ("default" (token-DEFKW))
+             ("print" (token-PRTKW))
              ("=" (token-EQ))
              (">" (token-GRT))
              ("<" (token-LESS))
@@ -46,7 +51,7 @@
 (define-tokens b (VAR))
 (define-tokens c (STR))
 (define-tokens e (BOOL))
-(define-empty-tokens d (EOF SEMICOL WHLKW DOKW IFKW THENKW ELSKW ENDKW RETKW EQ GRT LESS EQCHK NEQCHK ADD SUB MUL DIV OPAR CPAR NULLKW OBRC CBRC COMMA))
+(define-empty-tokens d (EOF SEMICOL WHLKW DOKW IFKW THENKW ELSKW ENDKW RETKW SWCHKW CASEKW BRKKW DEFKW PRTKW EQ GRT LESS EQCHK NEQCHK ADD SUB MUL DIV OPAR CPAR NULLKW OBRC CBRC COMMA))
 
 (define simple-parser
            (parser
@@ -63,6 +68,8 @@
                      ((whl_stmt) $1)
                      ((if_stmt) $1)
                      ((ret_stmt) $1)
+                     ((switch_stmt) $1)
+                     ((print_stmt) $1)
                      ((asgn_stmt) $1)
                   )
                  (whl_stmt
@@ -73,6 +80,26 @@
                   )
                  (ret_stmt
                      ((RETKW exp) (list 'ret $2))
+                  )
+                 (switch_stmt
+                     ((SWCHKW aexp case_stmts ENDKW) (list 'switch $2 $3))
+                  )
+                 (case_stmts
+                     ((case_stmt) $1)
+                     ((case_stmt case_stmts) (list $1 $2))
+                     ((DEFKW command) (list 'default $2))
+                  )
+                 (case_stmt
+                     ((CASEKW constant command) (list 'case $2 $3))
+                     ((CASEKW constant command BRKKW) (list 'case $2 $3 'break))
+                  )
+                 (constant
+                     ((NUM) (list 'num $1))
+                     ((SUB NUM) (list 'neg $2))
+                     ((STR) (list 'str $1))
+                  )
+                 (print_stmt
+                     ((PRTKW exp) (list 'print $2))
                   )
                  (asgn_stmt
                      ((VAR EQ exp) (list 'eq $1 $3))
@@ -115,7 +142,6 @@
                   )
                  (listmember
                      ((OBRC exp CBRC) $2)
-                     ;other
                   )
                )
             )
@@ -126,6 +152,12 @@
 (define lex-this (lambda (lexer input) (lambda () (lexer input))))
 (define my-lexer (lex-this simple-lexer (open-input-string input-string)))
 ;(define my-lexer (lex-this simple-lexer (open-input-string "if x == 2 then a = 5 else false;     return    [-7, 6]")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "return 5;return 6")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "a=2;b=3;c=4;return         false")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "switch x+2 case 12 a=2 break case 10 q=true case 8 b=d break default print -4 end")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "switch x+2 case 12 a=2 break case 10 q=true case 8 b=d case 6 d=b end")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "return         false ; a = 5")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "if x == 2 then a + 5 else false;     return    [-7, 6]")))
 ;(define my-lexer (lex-this simple-lexer (open-input-string "return \"abcd\" > 1 + 3 * b[k*(2+5)]")))
 (let ((parser-res (simple-parser my-lexer))) parser-res)
 
