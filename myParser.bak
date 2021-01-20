@@ -4,9 +4,6 @@
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc)
 
-(require (except-in eopl #%module-begin))
-
-
 (define simple-lexer
            (lexer
              (";" (token-SEMICOL))
@@ -31,7 +28,8 @@
              ((:or (:+ (char-range #\0 #\9)) (:: (:+ (char-range #\0 #\9)) #\. (:+ (char-range #\0 #\9)))) (token-NUM (string->number lexeme)))
              ("null" (token-NULLKW))
              (alphabetic (token-VAR lexeme))
-             ((:or "true" "false") (token-BOOL (if (equal? lexeme "true") #t #f)))
+             ("true" (token-TRUE))
+             ("false" (token-FALSE))
              ((:: #\" any-string #\") (token-STR lexeme))
              ("[" (token-OBRC))
              ("]" (token-CBRC))
@@ -45,19 +43,18 @@
 (define-tokens a (NUM))
 (define-tokens b (VAR))
 (define-tokens c (STR))
-(define-tokens e (BOOL))
-(define-empty-tokens d (EOF SEMICOL WHLKW DOKW IFKW THENKW ELSKW ENDKW RETKW EQ GRT LESS EQCHK NEQCHK ADD SUB MUL DIV OPAR CPAR NULLKW OBRC CBRC COMMA))
+(define-empty-tokens d (EOF SEMICOL WHLKW DOKW IFKW THENKW ELSKW ENDKW RETKW EQ GRT LESS EQCHK NEQCHK ADD SUB MUL DIV OPAR CPAR NULLKW TRUE FALSE OBRC CBRC COMMA))
 
 (define simple-parser
            (parser
               (start command)
               (end EOF)
               (error void)
-              (tokens a b c d e)
+              (tokens a b c d)
               (grammar
                  (command
                      ((keyword) $1)
-                     ((command SEMICOL keyword) (list 'command $1 $3))
+                     ((command SEMICOL keyword) (list $1 $3))
                   )
                  (keyword
                      ((whl_stmt) $1)
@@ -79,10 +76,10 @@
                   )
                  (exp
                      ((aexp) $1)
-                     ((aexp GRT aexp) (list 'grt? $1 $3))
-                     ((aexp LESS aexp) (list 'less? $1 $3))
-                     ((aexp EQCHK aexp) (list 'iseq? $1 $3))
-                     ((aexp NEQCHK aexp) (list 'isneq? $1 $3))
+                     ((aexp GRT aexp) (list 'grt $1 $3))
+                     ((aexp LESS aexp) (list 'less $1 $3))
+                     ((aexp EQCHK aexp) (list 'iseq $1 $3))
+                     ((aexp NEQCHK aexp) (list 'isneq $1 $3))
                   )
                  (aexp
                      ((bexp) $1)
@@ -100,7 +97,8 @@
                      ((NUM) (list 'num $1))
                      ((NULLKW) (list 'null))
                      ((VAR) (list 'var $1))
-                     ((BOOL) (list 'bool $1))
+                     ((TRUE) (list 'bool 'true))
+                     ((FALSE) (list 'bool 'false))
                      ((STR) (list 'str $1))
                      ((list) $1)
                      ((VAR listmember) (list 'accessmember $1 $2))
@@ -122,11 +120,8 @@
   )
 
 ;test
-(define input-string (file->string  "test.txt"))
 (define lex-this (lambda (lexer input) (lambda () (lexer input))))
-(define my-lexer (lex-this simple-lexer (open-input-string input-string)))
-;(define my-lexer (lex-this simple-lexer (open-input-string "if x == 2 then a = 5 else false;     return    [-7, 6]")))
+(define my-lexer (lex-this simple-lexer (open-input-string "return         false ; a = 5")))
+;(define my-lexer (lex-this simple-lexer (open-input-string "if x == 2 then a + 5 else false;     return    [-7, 6]")))
 ;(define my-lexer (lex-this simple-lexer (open-input-string "return \"abcd\" > 1 + 3 * b[k*(2+5)]")))
 (let ((parser-res (simple-parser my-lexer))) parser-res)
-
-(provide (all-defined-out))

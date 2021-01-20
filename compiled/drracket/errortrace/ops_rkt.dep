@@ -1,0 +1,1 @@
+("7.9" racket ("b83e2dcd5269e22cb55bea1c4d875b12ddeada6d" . "2056601bf972fb1fac871d60d6dfb61e9eada392") (collects #"eopl" #"main.rkt") (collects #"errortrace" #"errortrace-key.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
