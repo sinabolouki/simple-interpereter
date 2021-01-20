@@ -14,23 +14,30 @@
   (lambda (tree env)
     (let ((action (car tree)))
       (cond
-        [(equal? action 'command)
+        ((equal? action 'command)
          (let ((result (value-of (cadr tree) env)))
            (if (equal? (caddr result) 'END)
                (list (car result) (cadr result) 'END)
                (value-of (caddr tree) (cadr result)))
-          )]
+          ))
         
-        [(equal? action 'if)
+        ((equal? action 'if)
          (let* ((exp-result (value-of (cadr tree) env))
                 (new-env (cadr exp-result)))
            (if (car exp-result)
                (value-of (caddr tree) new-env)
                (value-of (cadddr tree) new-env))
            )
-         ]
+         )
 
-        [(equal? action 'while)
+         ((equal? action 'eq)
+         (let ((result (value-of (caddr tree) env)))
+           (list (car result) (extend-env (cadr tree) (car result) (cadr result)) 'NOTEND)
+           )
+         )
+
+
+        ((equal? action 'while)
          (let ((exp-result (value-of (cadr tree) env)))
            (if (and (car exp-result) (not (eqv? (caddr exp-result) 'END)))
                (let* ((new-env (cadr exp-result))
@@ -43,61 +50,15 @@
                  exp-result
              )
            )
-         ]
+         )
 
-        [(equal? action 'ret)
+        ((equal? action 'ret)
          (let ((result (value-of (cadr tree) env)))
            (list (car result) (cadr result) 'END)
            )
-         ]
+         )
 
-        [(equal? action 'eq)
-         (let ((result (value-of (caddr tree) env)))
-           (list (car result) (extend-env (cadr tree) (car result) (cadr result)) 'NOTEND)
-           )
-         ]
-
-        [(equal? action 'print)
-         (let ((result (value-of (cadr tree) env)))
-           (display (car result))
-           (display "\n")
-           (list (car result) (cadr result) 'NOTEND)
-           )
-         ]
-
-        [(equal? action 'switch)
-         (let* ((exp-val (car (value-of (cadr tree) env)))
-                (case-result (value-of (caddr tree) env))
-                (cases-list (caddr tree))
-                )
-           (let ((x (do ((case-result (value-of (caddr tree) env) (if (null? (cdddr cases-list)) (value-of cases-list env) (value-of (cadddr cases-list) env))) (cases-list (caddr tree) (if (null? (cdddr cases-list)) cases-list (cadddr cases-list))))
-             ((or (equal? (car case-result) exp-val) (equal? (car cases-list) 'single-case)) (list cases-list case-result))
-             )))
-           (let* ((cases-list (car x))
-                  (case-result (cadr x)))
-           (if (equal? (car cases-list) 'single-case)
-               (if (equal? (car case-result) exp-val)
-                   (value-of (caddr cases-list) env)
-                   (value-of (cadddr tree) env))
-               (value-of (caddr cases-list) env)
-           ))))
-         ]
-
-        [(equal? action 'single-case)
-         (let ((result (value-of (cadr tree) env)))
-           (list (car result) (cadr result) 'NOTEND)
-           )
-         ]
-
-        [(equal? action 'multi-case)
-         (let ((result (value-of (cadr tree) env)))
-           (list (car result) (cadr result) 'NOTEND)
-           )
-         ]
-
-        [(equal? action 'aexp) (value-of (cadr tree) env)]
-
-        [(equal? action 'grt?)
+        ((equal? action 'grt)
          (let* ((valu (value-of (cadr tree) env))
            (left-operand (car valu))
            (new-env (cadr valu))
@@ -106,9 +67,9 @@
            (second-new-env (cadr val-left)))
            (list (gr? left-operand right-operand) second-new-env 'NOTEND)
            )
-        ]
+        )
 
-        [(equal? action 'less?)
+        ((equal? action 'less)
          (let* ((valu (value-of (cadr tree) env))
            (left-operand (car valu))
            (new-env (cadr valu))
@@ -117,33 +78,9 @@
            (second-new-env (cadr val-left)))
            (list (ls? left-operand right-operand) second-new-env 'NOTEND)
            )
-        ]
+        )
 
-        [(equal? action 'iseq?)
-         (let* ((valu (value-of (cadr tree) env))
-           (left-operand (car valu))
-           (new-env (cadr valu))
-           (val-left (value-of (caddr tree) env))
-           (right-operand (car val-left))
-           (second-new-env (cadr val-left)))
-           (list (equality? left-operand right-operand) second-new-env 'NOTEND)
-           )
-        ]
-
-        [(equal? action 'isneq?)
-         (let* ((valu (value-of (cadr tree) env))
-           (left-operand (car valu))
-           (new-env (cadr valu))
-           (val-left (value-of (caddr tree) env))
-           (right-operand (car val-left))
-           (second-new-env (cadr val-left)))
-           (list (inequality? left-operand right-operand) second-new-env 'NOTEND)
-           )
-        ]
-
-        [(equal? action 'bexp) (value-of (cadr tree) env)]
-
-        [(equal? action 'sub)
+        ((equal? action 'sub)
          (let* ((valu (value-of (cadr tree) env))
            (left-operand (car valu))
            (new-env (cadr valu))
@@ -152,9 +89,9 @@
            (second-new-env (cadr val-left)))
            (list (arith-op left-operand "-" right-operand) second-new-env 'NOTEND)
            )
-        ]
+        )
 
-        [(equal? action 'add)
+        ((equal? action 'add)
          (let* ((valu (value-of (cadr tree) env))
            (left-operand (car valu))
            (new-env (cadr valu))
@@ -163,18 +100,16 @@
            (second-new-env (cadr val-left)))
            (list (arith-op left-operand "+" right-operand) second-new-env 'NOTEND)
            )
-        ]
+        )
 
-        [(equal? action 'cexp) (value-of (cadr tree) env)]
-
-        [(equal? action 'mul)
+        ((equal? action 'mul)
          (cond
            ((equal? (car (value-of (cadr tree) env)) 0) (list 0 env 'NOTEND))
            ((equal? (car (value-of (cadr tree) env)) #f) (list #f 'NOTEND))
-           (else (list (arith-op (car (value-of (cadr tree) env)) "*" (car (value-of (caddr tree) env))) (cadr (value-of (caddr tree) env))) 'NOTEND))
-        ]
+           (else (list (arith-op (car (value-of (cadr tree) env)) "*" (car (value-of (caddr tree) env))) (cadr (value-of (caddr tree) env)) 'NOTEND)))
+        )
 
-        [(equal? action 'div)
+        ((equal? action 'div)
          (let* ((valu (value-of (cadr tree) env))
            (left-operand (car valu))
            (new-env (cadr valu))
@@ -183,112 +118,138 @@
            (second-new-env (cadr val-left)))
            (list (arith-op left-operand "/" right-operand) second-new-env 'NOTEND)
            )
-        ]
+        )
+		
+		((equal? action 'iseq)
+         (let* ((valu (value-of (cadr tree) env))
+           (left-operand (car valu))
+           (new-env (cadr valu))
+           (val-left (value-of (caddr tree) env))
+           (right-operand (car val-left))
+           (second-new-env (cadr val-left)))
+           (list (equality? left-operand right-operand) second-new-env 'NOTEND)
+           )
+        )
 
-        [(equal? action 'neg)
+        ((equal? action 'isneq)
+         (let* ((valu (value-of (cadr tree) env))
+           (left-operand (car valu))
+           (new-env (cadr valu))
+           (val-left (value-of (caddr tree) env))
+           (right-operand (car val-left))
+           (second-new-env (cadr val-left)))
+           (list (inequality? left-operand right-operand) second-new-env 'NOTEND)
+           )
+        )
+        
+        ((equal? action 'bool) (list (cadr tree) env 'NOTEND))
+        ((equal? action 'num) (list (cadr tree) env 'NOTEND))
+        ((equal? action 'str) (list (cadr tree) env 'NOTEND))
+        ((equal? action 'var) (list (apply-env env (cadr tree)) env 'NOTEND))
+        ((equal? action 'list) (value-of (cadr tree) env 'NOTEND))
+        ((equal? action 'par-exp) (value-of (cadr tree) env))
+        ((equal? action 'null) (list '() env 'NOTEND))
+		((equal? action 'neg)
          (let* ((valu (value-of (cadr tree) env))
            (oper (car valu))
            (new-env (cadr valu)))
            (list (negate oper) new-env 'NOTEND)
            )
-        ]
+        )
 
-        [(equal? action 'par-exp) (value-of (cadr tree) env)]
-        [(equal? action 'num) (list (cadr tree) env 'NOTEND)]
-        [(equal? action 'null) (list '() env 'NOTEND)]
-        [(equal? action 'bool) (list (cadr tree) env 'NOTEND)]
-        [(equal? action 'str) (list (cadr tree) env 'NOTEND)]
-        [(equal? action 'var) (list (apply-env env (cadr tree)) env 'NOTEND)]
-        [(equal? action 'list) (value-of (cadr tree) env 'NOTEND)]
-
-        [(equal? action 'accessmember)
+        ((equal? action 'accessmember)
          (let* ((result-indices (value-of (caddr tree) env))
                 (indices (car result-indices))
                 (new-env (cadr result-indices))
-                (input-list (apply-env env (cadr tree))))
-           (list (get-list-item input-list indices) new-env 'NOTEND)
+                (li (apply-env env (cadr tree))))
+           (list (get-item li indices) new-env 'NOTEND)
            )
-         ]
+         )
+		 
+		((equal? action 'emptylist) (list '() env 'NOTEND))
 
-        [(equal? action 'list-values) (value-of (cadr tree) env)]
-        [(equal? action 'empty-list) (list '() env 'NOTEND)]
+        ((equal? action 'listvalues) (value-of (cadr tree) env))
 
-        [(equal? action 'list-val)
+        ((equal? action 'listval)
          (let ((result (value-of (cadr tree) env)))
            (list (list (car result)) (cadr result) 'NOTEND)
            )
-         ]
-        [(equal? action 'list-vals)
+         )
+        
+        ((equal? action 'listvals)
          (let* ((result-val (value-of (cadr tree) env))
                 (result-vals (value-of (caddr tree) (cadr result-val))))
            (list (cons (car result-val) (car result-vals)) (cadr result-vals) 'NOTEND)
            )
-         ]
+         )
 
-        [(equal? action 'list-member)
+        ((equal? action 'listmember)
          (let ((result (value-of (cadr tree) env)))
            (list (list (car result)) (cadr result) 'NOTEND)
            )
-         ]
-        [(equal? action 'list-members)
+         )
+        
+        ((equal? action 'list-members)
          (let* ((result-val (value-of (cadr tree) env))
                 (result-vals (value-of (caddr tree) (cadr result-val))))
            (list (cons (car result-val) (car result-vals)) (cadr result-vals) 'NOTEND)
            )
-         ]
-        ))))
+         )
+		 
+		((equal? action 'print)
+         (let ((result (value-of (cadr tree) env)))
+           (display (car result))
+           (display "\n")
+           (list (car result) (cadr result) 'NOTEND)
+           )
+         )
+        )
+      )
+    )
+  )
 
-(define one-d-list-ref
-  (lambda (lst place)
+(define list-ref
+  (lambda (li index)
     (cond
-      [(not (list? lst)) (report-not-a-list lst)]
-      [(<= (length lst) place) (report-index-out-of-bound lst place)]
-      [else (if (= place 0)
-            (car lst)
-            (one-d-list-ref (cdr lst) (- place 1)))]
+      [(not (list? li)) (type-error li)]
+      [(<= (length li) index) (bound-error li index)]
+      [else (if (= index 0)
+            (car li)
+            (list-ref (cdr li) (- index 1)))]
       )
     )
   )
 
-(define report-index-out-of-bound
-  (lambda (lst index)
-    (eopl:error 'apply-env "List ~s Out of Bounds for Index ~s" lst index)
+(define bound-error
+  (lambda (li index)
+    (eopl:error 'apply-env "List ~s Out of Bounds for Index ~s" li index)
     )
   )
 
-(define report-not-a-list
-  (lambda (lst)
-    (eopl:error 'apply-env "~s Is Not a List" lst)
+(define type-error
+  (lambda (li)
+    (eopl:error 'apply-env "~s List type error" li)
     )
   )
 
-(define get-list-item
-  (lambda (input-list indices)
+(define get-item
+  (lambda (li indices)
     (if (zero? (length indices))
-        input-list
-        (get-list-item (one-d-list-ref input-list (car indices)) (cdr indices))
+        li
+        (get-item (list-ref li (car indices)) (cdr indices))
       )
     )
   )
 
-(define (while condition body)
-  (when condition
-    body
-    (while condition body)
-    )
-  )
-
-(define evaluate
+(define interpret
   (lambda (path)
     (define input-string (file->string path))
     (define lex-this (lambda (lexer input) (lambda () (lexer input))))
     (define my-lexer (lex-this simple-lexer (open-input-string input-string)))
-    (let
-        ((parser-res (simple-parser my-lexer)))
-      
+    (let((parser-res (simple-parser my-lexer)))
         (car (value-of parser-res (empty-env)))
       )
     )
   )
 
-(evaluate "test.txt")
+(interpret "test.txt")

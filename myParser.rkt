@@ -106,10 +106,10 @@
                   )
                  (exp
                      ((aexp) $1)
-                     ((aexp GRT aexp) (list 'grt? $1 $3))
-                     ((aexp LESS aexp) (list 'less? $1 $3))
-                     ((aexp EQCHK aexp) (list 'iseq? $1 $3))
-                     ((aexp NEQCHK aexp) (list 'isneq? $1 $3))
+                     ((aexp GRT aexp) (list 'grt $1 $3))
+                     ((aexp LESS aexp) (list 'less $1 $3))
+                     ((aexp EQCHK aexp) (list 'iseq $1 $3))
+                     ((aexp NEQCHK aexp) (list 'isneq $1 $3))
                   )
                  (aexp
                      ((bexp) $1)
@@ -134,14 +134,15 @@
                   )
                  (list
                      ((OBRC CBRC) 'emptylist)
-                     ((OBRC listvalues CBRC) (list 'list $2))
+                     ((OBRC listvalues CBRC) (list 'listvalues $2))
                   )
                  (listvalues
-                     ((exp) $1)
-                     ((exp COMMA listvalues) (list $1 $3))
+                     ((exp) (list 'listval $1))
+                     ((exp COMMA listvalues) (list 'listvals $1 $3))
                   )
                  (listmember
-                     ((OBRC exp CBRC) $2)
+                     ((OBRC exp CBRC) (list 'listmember $2))
+                     ((OBRC exp CBRC listmember) (list 'listmember $2))
                   )
                )
             )
@@ -159,6 +160,6 @@
 ;(define my-lexer (lex-this simple-lexer (open-input-string "return         false ; a = 5")))
 ;(define my-lexer (lex-this simple-lexer (open-input-string "if x == 2 then a + 5 else false;     return    [-7, 6]")))
 ;(define my-lexer (lex-this simple-lexer (open-input-string "return \"abcd\" > 1 + 3 * b[k*(2+5)]")))
-(let ((parser-res (simple-parser my-lexer))) parser-res)
+;(let ((parser-res (simple-parser my-lexer))) parser-res)
 
 (provide (all-defined-out))
